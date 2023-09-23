@@ -1,0 +1,56 @@
+services:
+  backend:
+    container_name: backend
+    build:
+      context: .
+      dockerfile: postgresql/mysetting/Dockerfile
+    # image: postgresql
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./tmp/db:/var/lib/postgresql/data
+    # networks:
+    #   - back-tier
+
+  app:
+    container_name: app
+    build: 
+      context: ./rails
+      dockerfile: mysetting/Dockerfile
+    # image: spend-management-rails
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec puma -C config/puma.rb"
+    # ports:
+    #   - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./rails/:/spend-management-webapp
+      - public-data:/spend-management-webapp/public
+      - tmp-data:/spend-management-webapp/tmp
+    # networks:
+    #   - front-tier
+    #   - back-tier
+
+  frontend:
+    container_name: frontend
+    build: 
+      context: ./nginx/mysetting
+      dockerfile: Dockerfile
+    # image: nginx
+    volumes:
+      - ./nginx/mysetting/app.conf:/etc/nginx/app.conf
+      - public-data:/spend-management-webapp/public
+      - tmp-data:/spend-management-webapp/tmp
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+
+volumes:
+  public-data:
+  tmp-data:
+# networks:
+#   front-tier: {}
+#   back-tier: {}
+
